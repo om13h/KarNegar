@@ -20,22 +20,31 @@ android {
         }
     }
 
-    // ===== Release signing (keystore is committed so GitHub Actions can sign automatically) =====
-    // SECURITY NOTE: This setup is fine for a personal app. For a commercial app,
-    // move these values to GitHub Secrets / local.properties instead.
+    // ===== Release signing =====
+    // Keystore is NOT committed to the repository (security).
+    // In CI: workflow decodes KEYSTORE_BASE64 secret into keystore/ and credentials
+    //         come from STORE_PASSWORD / KEY_ALIAS / KEY_PASSWORD secrets.
+    // Locally: set the same 4 environment variables (see keystore/CREDENTIALS.txt backup).
+    // If no keystore file exists, release builds produce an unsigned APK.
+    val releaseKeystore = rootProject.file("keystore/karnegar-release.keystore")
+
     signingConfigs {
-        create("release") {
-            storeFile = rootProject.file("keystore/karnegar-release.keystore")
-            storePassword = "***REMOVED***"
-            keyAlias = "karnegar_key"
-            keyPassword = "***REMOVED***"
+        if (releaseKeystore.exists()) {
+            create("release") {
+                storeFile = releaseKeystore
+                storePassword = System.getenv("STORE_PASSWORD") ?: ""
+                keyAlias = System.getenv("KEY_ALIAS") ?: ""
+                keyPassword = System.getenv("KEY_PASSWORD") ?: ""
+            }
         }
     }
 
     buildTypes {
         release {
             isMinifyEnabled = false
-            signingConfig = signingConfigs.getByName("release")
+            if (releaseKeystore.exists()) {
+                signingConfig = signingConfigs.getByName("release")
+            }
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"

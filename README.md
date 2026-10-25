@@ -36,8 +36,9 @@
 ```
 KarNegar/
 ├── .github/workflows/android.yml   ← بیلد خودکار APK روی گیت‌هاب
-├── keystore/
-│   └── karnegar-release.keystore   ← کلید امضای Release
+├── keystore/                        ← فقط لوکال (در .gitignore — هرگز commit نشود)
+│   ├── karnegar-release.keystore    ← کلید امضای Release (بکاپش نزد خودت نگه‌دار)
+│   └── CREDENTIALS.txt              ← رمزهای کلید
 ├── app/src/main/
 │   ├── AndroidManifest.xml
 │   ├── java/com/karnegar/app/
@@ -139,33 +140,44 @@ git push origin v1.1.0
 
 ---
 
-## 🔐 امضای APK و اطلاعات Keystore
+## 🔐 امضای APK و امنیت کلید (GitHub Secrets)
 
-پروژه برای راحتی شما، **کلید امضا و رمزها را داخل خود ریپو** قرار داده تا بیلد Release بدون هیچ تنظیم اضافه‌ای روی گیت‌هاب امضا شود:
+کلید امضای Release **داخل ریپو نیست** و هرگز نباید باشد — در **GitHub Secrets** به‌صورت رمزنگاری‌شده نگهداری می‌شود و فقط هنگام بیلد، موقتاً روی سرور Actions باز می‌شود:
 
-| مشخصه | مقدار |
+| Secret | محتوا |
 |---|---|
-| فایل Keystore | `keystore/karnegar-release.keystore` |
-| الگوریتم | RSA 2048 (PKCS12) |
-| Keystore Password | `***REMOVED***` |
-| Key Alias | `karnegar_key` |
-| Key Password | `***REMOVED***` |
-| اعتبار | تا سال ۲۰۵۶ (۱۰,۹۵۰ روز) |
+| `KEYSTORE_BASE64` | فایل Keystore به‌صورت Base64 |
+| `STORE_PASSWORD` | رمز Keystore |
+| `KEY_ALIAS` | نام مستعار کلید (`karnegar_key`) |
+| `KEY_PASSWORD` | رمز کلید |
 
-این مقادیر در `app/build.gradle.kts` داخل بلوک `signingConfigs` تنظیم شده‌اند.
+ورک‌فلو (`android.yml`) پیش از بیلد، Keystore را از Secret بازمی‌گرداند و این مقادیر را به‌صورت متغیر محیطی به Gradle می‌دهد. بلوک `signingConfigs` در `app/build.gradle.kts` فقط در صورتی که فایل Keystore موجود باشد فعال می‌شود؛ پس بدون تنظیم هیچ چیز، بیلد Release خروجی **unsigned** می‌دهد.
 
-> ⚠️ **هشدار امنیتی:** این حالت برای اپ شخصی/آموزشی کاملاً مناسب است، اما اگر روزی اپ را برای عموم منتشر کردی:
-> 1. رمزها را از کد خارج کن و در `local.properties` یا **GitHub Secrets** بگذار.
-> 2. یک Keystore کاملاً جدید با رمز قوی بساز و فایل قبلی را از ریپو حذف کن.
->
-> دستور ساخت Keystore جدید:
-> ```bash
-> keytool -genkeypair -v -keystore karnegar-release.keystore \
->   -alias karnegar_key -keyalg RSA -keysize 2048 -validity 10950 \
->   -storepass YOUR_STORE_PASS -keypass YOUR_KEY_PASS
-> ```
->
-> 🔑 **کلید موجود را گم نکن!** برای اینکه آپدیت‌ها روی نسخه نصب‌شده قبلی نصب شوند، باید همیشه با همان Keystore امضا کنی.
+### 📦 بکاپ کلید (خیلی مهم!)
+
+فایل `keystore/CREDENTIALS.txt` (کنار فایل ZIP که داری) شامل رمزها و مشخصات کامل کلید است. **این فایل را در جای امن نگه دار** — اگر کلید را گم کنی، دیگر هیچ‌وقت نمی‌توانی آپدیت روی نسخه‌های نصب‌شده منتشر کنی.
+
+### 🛠️ بیلد Release لوکال
+
+```bash
+export KEYSTORE_FILE=keystore/karnegar-release.keystore
+export STORE_PASSWORD="رمز-تو"
+export KEY_ALIAS="karnegar_key"
+export KEY_PASSWORD="رمز-تو"
+./gradlew assembleRelease
+```
+
+### 🔑 اگر روزی خواستی دوباره کلید عوض کنی
+
+```bash
+keytool -genkeypair -v -keystore keystore/karnegar-release.keystore \
+  -alias karnegar_key -keyalg RSA -keysize 2048 -validity 10950 \
+  -storepass YOUR_STORE_PASS -keypass YOUR_KEY_PASS
+```
+
+سپس مقادیر ۴ Secret را در Settings → Secrets and variables → Actions به‌روز کن. توجه: با کلید جدید، کاربران باید نسخه قبلی را حذف و نسخه جدید را نصب کنند (امضا تغییر کرده).
+
+> 💡 تاریخچه: کلید اولیه پروژه به‌صورت عمومی در ریپو بود؛ در 2026-10-25 باطل شد، با کلید جدید جایگزین گردید و تاریخچه گیت هم با `git filter-repo` پاک‌سازی شد. APKهای امضاشده با کلید قدیمی دیگر به‌روز نمی‌شوند — فقط از Releases فعلی نصب کن.
 
 ---
 

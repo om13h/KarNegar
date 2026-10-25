@@ -11,3 +11,9 @@ local.properties
 .kotlin
 /app/build
 *.hprof
+
+# Signing credentials — NEVER commit these
+/keystore/
+*.keystore
+*.jks
+keystore/CREDENTIALS.txt
