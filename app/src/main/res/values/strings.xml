@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">کارنگار</string>
+    <string name="channel_name">یادآور کارها</string>
+    <string name="channel_desc">نوتیفیکیشن یادآور برای کارهای ثبت‌شده</string>
+    <string name="notification_title">یادآور کارنگار</string>
+    <string name="action_done">انجام شد</string>
+    <string name="action_snooze">۵ دقیقه دیگر</string>
+</resources>
