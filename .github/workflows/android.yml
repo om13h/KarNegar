@@ -49,8 +49,21 @@ jobs:
           name: KarNegar-APKs
           path: output/
 
-      - name: Attach APK to GitHub Release (only when a tag is pushed)
+      - name: Attach APK to GitHub Release (version tags)
         if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v2
         with:
           files: output/KarNegar-release.apk
+
+      - name: Update "Latest" Release with fresh APK (every push to main)
+        if: github.ref == 'refs/heads/main'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: latest
+          name: "آخرین نسخه — دانلود مستقیم APK"
+          body: |
+            فایل **KarNegar-release.apk** را دانلود و روی گوشی نصب کن (نسخه امضاشده Release).
+
+            این Release با هر تغییر در کد، خودکار به‌روز می‌شود — همیشه همین صفحه را باز کن.
+          files: output/KarNegar-release.apk
+          make_latest: "true"
